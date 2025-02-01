@@ -1,0 +1,5 @@
+.idea
+/vendor/
+.docker
+composer.phar
+docker-compose.yml
