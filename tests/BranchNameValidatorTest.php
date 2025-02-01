@@ -1,7 +1,7 @@
 <?php
 
 use CaptainHook\App\Exception\ActionFailed;
-use fperezco\CaptainhookConventionalBranchCommits\BranchNameValidator;
+use fperezco\CaptainhookConventionalBranchCommits\validators\BranchNameValidator;
 use PHPUnit\Framework\TestCase;
 
 class BranchNameValidatorTest extends TestCase
@@ -21,6 +21,24 @@ class BranchNameValidatorTest extends TestCase
         $this->addToAssertionCount(1);
     }
 
+    public function validBranchNameProvider(): array
+    {
+        return [
+            ['develop'],
+            ['master'],
+            ['main'],
+            ['feature/RTG-2345-new-user'],
+            ['feature/RT-23'],
+            ['feature/A-2'],
+            ['feature/new-issue-blalbal'],
+            ['bugfix/IDB-89-fix-bug'],
+            ['hotfix/IDB-89-fix-bug'],
+            ['chore/IDB-89-fix-bug'],
+            ['release/RD-56'],
+            ['bugfix/123']
+        ];
+    }
+
     /**
      * @dataProvider invalidBranchNameProvider
      */
@@ -30,6 +48,52 @@ class BranchNameValidatorTest extends TestCase
         $validator = new BranchNameValidator($invalidBranchName);
         $validator->validate();
     }
+
+    public function invalidBranchNameProvider(): array
+    {
+        return [
+            ['invalid-branch-name'],
+            ['feature/RTG_2345_new_user'],
+            ['RTG_2345_new_user'],
+            ['ID-2345-new_user'],
+            ['bugfix/'],
+            ['test/'],
+            [''],
+        ];
+    }
+
+
+    /**
+     * @dataProvider customBranchNameProvider
+     */
+    public function testCustomBranchNamePattern($branchName, $shouldThrowException)
+    {
+        $customPattern = '/^(custom|pattern)\/[A-Za-z0-9-]+$/';
+        $validator = new BranchNameValidator($branchName, $customPattern);
+
+        if ($shouldThrowException) {
+            $this->expectException(ActionFailed::class);
+        }
+
+        $validator->validate();
+
+        if (!$shouldThrowException) {
+            $this->assertTrue(true);
+        }
+    }
+
+    public function customBranchNameProvider(): array
+    {
+        return [
+            ['custom/branch-123', false], // Valid, no se espera excepción
+            ['pattern/branch-456', false], // Valid, no se espera excepción
+            ['invalid/branch', true],      // Invalid, debería lanzar una excepción
+            ['custom/', true],             // Invalid, debería lanzar una excepción
+            ['pattern/', true],            // Invalid, debería lanzar una excepción
+            ['custom-branch-123', true],   // Invalid, debería lanzar una excepción
+        ];
+    }
+
 
     public function testInvalidBranchNameMessageWithDefaultPattern()
     {
@@ -59,66 +123,50 @@ class BranchNameValidatorTest extends TestCase
         }
     }
 
-    /**
-     * @dataProvider customBranchNameProvider
-     */
-    public function testCustomBranchNamePattern($branchName, $shouldThrowException)
+    public function testBranchNameWithoutTicketCodeRequiredThrowsException()
     {
-        $customPattern = '/^(custom|pattern)\/[A-Za-z0-9-]+$/';
-        $validator = new BranchNameValidator($branchName, $customPattern);
+        $invalidBranchName = 'feature/invalid-branch-name';
+        $validator = new BranchNameValidator(
+            $invalidBranchName,
+            null,
+            true
+        );
 
-        if ($shouldThrowException) {
-            $this->expectException(ActionFailed::class);
-        }
+        $this->expectException(ActionFailed::class);
+        $this->expectExceptionMessage("Error: branch: '$invalidBranchName' must include a ticket code following the pattern '/[A-Z]+-[0-9]+/'.");
 
         $validator->validate();
+    }
 
-        if (!$shouldThrowException) {
-            $this->assertTrue(true);
+    public function testBranchNameWithTicketCodeNotLaunchException(){
+
+        $validBranchName = 'feature/RTG-2345-new-user';
+        $validator = new BranchNameValidator($validBranchName, null, true);
+
+        try {
+            $validator->validate();
+        } catch (ActionFailed $e) {
+            $this->fail("Expected no exception, but got: " . $e->getMessage());
         }
+        $this->addToAssertionCount(1);
     }
 
-
-    public function customBranchNameProvider(): array
+    public function testBranchNameWithCustomTicketCodePattern()
     {
-        return [
-            ['custom/branch-123', false], // Valid, no se espera excepción
-            ['pattern/branch-456', false], // Valid, no se espera excepción
-            ['invalid/branch', true],      // Invalid, debería lanzar una excepción
-            ['custom/', true],             // Invalid, debería lanzar una excepción
-            ['pattern/', true],            // Invalid, debería lanzar una excepción
-            ['custom-branch-123', true],   // Invalid, debería lanzar una excepción
-        ];
-    }
+        $validBranchName = 'feature/CUST-1234-new-feature';
+        $customTicketCodePattern = '/CUST-[0-9]{4}/';
+        $validator = new BranchNameValidator(
+            $validBranchName,
+            null,
+            true,
+            $customTicketCodePattern
+        );
 
-    public function validBranchNameProvider(): array
-    {
-        return [
-            ['develop'],
-            ['master'],
-            ['main'],
-            ['feature/RTG-2345-new-user'],
-            ['feature/RT-23'],
-            ['feature/A-2'],
-            ['feature/new-issue-blalbal'],
-            ['bugfix/IDB-89-fix-bug'],
-            ['hotfix/IDB-89-fix-bug'],
-            ['chore/IDB-89-fix-bug'],
-            ['release/RD-56'],
-            ['bugfix/123']
-        ];
-    }
-
-    public function invalidBranchNameProvider(): array
-    {
-        return [
-            ['invalid-branch-name'],
-            ['feature/RTG_2345_new_user'],
-            ['RTG_2345_new_user'],
-            ['ID-2345-new_user'],
-            ['bugfix/'],
-            ['test/'],
-            [''],
-        ];
+        try {
+            $validator->validate();
+        } catch (ActionFailed $e) {
+            $this->fail("Expected no exception, but got: " . $e->getMessage());
+        }
+        $this->addToAssertionCount(1);
     }
 }

@@ -1,7 +1,7 @@
 <?php
 
 use CaptainHook\App\Exception\ActionFailed;
-use fperezco\CaptainhookConventionalBranchCommits\CommitNameValidator;
+use fperezco\CaptainhookConventionalBranchCommits\validators\CommitNameValidator;
 use PHPUnit\Framework\TestCase;
 
 class CommitNameValidatorTest extends TestCase
@@ -12,9 +12,6 @@ class CommitNameValidatorTest extends TestCase
     public function testValidCommitMessage($commitMessage)
     {
         $validator = new CommitNameValidator($commitMessage);
-        $this->assertTrue($validator->validate());
-
-        $validator = new CommitNameValidator($commitMessage);
 
         try {
             $validator->validate();
@@ -22,6 +19,23 @@ class CommitNameValidatorTest extends TestCase
             $this->fail("Expected no exception, but got: " . $e->getMessage());
         }
         $this->addToAssertionCount(1);
+    }
+
+    public function validCommitMessageProvider(): array
+    {
+        return [
+            ['feat(RTG-2345): add new feature'],
+            ['feat(stuffwithoutspaces): add new feature'],
+            ['fix(IDB-89): fix bug'],
+            ['build: update dependencies'],
+            ['ci: update CI configuration'],
+            ['docs: update documentation'],
+            ['style: improve code style'],
+            ['refactor: refactor code'],
+            ['perf: improve performance'],
+            ['test: add new tests'],
+            ['Merge branch \'feature/RTG-2345-new-user\''],
+        ];
     }
 
     /**
@@ -32,6 +46,18 @@ class CommitNameValidatorTest extends TestCase
         $this->expectException(ActionFailed::class);
         $validator = new CommitNameValidator($invalidCommitMessage);
         $validator->validate();
+    }
+
+    public function invalidCommitMessageProvider(): array
+    {
+        return [
+            ['invalid commit message'],
+            ['chore(): if nothing inside () not include them is invalid!'],
+            ['feat:missing space'],
+            ['chore:'],
+            ['docs'],
+            ['style-'],
+        ];
     }
 
     /**
@@ -51,6 +77,18 @@ class CommitNameValidatorTest extends TestCase
         if (!$shouldThrowException) {
             $this->assertTrue(true);
         }
+    }
+
+    public function customCommitMessageProvider(): array
+    {
+        return [
+            ['custom: valid-message-123', false],
+            ['pattern: another-valid-message-456', false],
+            ['invalid: message', true],
+            ['custom: ', true],
+            ['pattern:', true],
+            ['custom-message-123', true],
+        ];
     }
 
     public function testInvalidCommitMessageWithDefaultPattern()
@@ -81,44 +119,50 @@ class CommitNameValidatorTest extends TestCase
         }
     }
 
-    public function customCommitMessageProvider(): array
+    public function testCommitMessageWithoutTicketCodeRequiredThrowsException()
     {
-        return [
-            ['custom: valid-message-123', false],
-            ['pattern: another-valid-message-456', false],
-            ['invalid: message', true],
-            ['custom: ', true],
-            ['pattern:', true],
-            ['custom-message-123', true],
-        ];
+        $invalidCommitMessage = 'feat: add new feature';
+        $validator = new CommitNameValidator(
+            $invalidCommitMessage,
+            null,
+            true
+        );
+
+        $this->expectException(ActionFailed::class);
+        $this->expectExceptionMessage("Error: commit message: $invalidCommitMessage ,must include a ticket code following the pattern '/[A-Z]+-[0-9]+/'.");
+
+        $validator->validate();
     }
 
-    public function validCommitMessageProvider(): array
+    public function testCommitMessageWithTicketCodeNotLaunchException()
     {
-        return [
-            ['feat(RTG-2345): add new feature'],
-            ['feat(stuffwithoutspaces): add new feature'],
-            ['fix(IDB-89): fix bug'],
-            ['build: update dependencies'],
-            ['ci: update CI configuration'],
-            ['docs: update documentation'],
-            ['style: improve code style'],
-            ['refactor: refactor code'],
-            ['perf: improve performance'],
-            ['test: add new tests'],
-            ['Merge branch \'feature/RTG-2345-new-user\''],
-        ];
+        $validCommitMessage = 'feat(RTG-2345): add new feature';
+        $validator = new CommitNameValidator($validCommitMessage, null, true);
+
+        try {
+            $validator->validate();
+        } catch (ActionFailed $e) {
+            $this->fail("Expected no exception, but got: " . $e->getMessage());
+        }
+        $this->addToAssertionCount(1);
     }
 
-    public function invalidCommitMessageProvider(): array
+    public function testCommitMessageWithCustomTicketCodePattern()
     {
-        return [
-            ['invalid commit message'],
-            ['chore(): if nothing inside () not include them is invalid!'],
-            ['feat:missing space'],
-            ['chore:'],
-            ['docs'],
-            ['style-'],
-        ];
+        $validCommitMessage = 'feat(CUST-1234): add new feature';
+        $customTicketCodePattern = '/CUST-[0-9]{4}/';
+        $validator = new CommitNameValidator(
+            $validCommitMessage,
+            null,
+            true,
+            $customTicketCodePattern
+        );
+
+        try {
+            $validator->validate();
+        } catch (ActionFailed $e) {
+            $this->fail("Expected no exception, but got: " . $e->getMessage());
+        }
+        $this->addToAssertionCount(1);
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace fperezco\CaptainhookConventionalBranchCommits;
+namespace fperezco\CaptainhookConventionalBranchCommits\helpers;
 
 class CurrentBranchNameGetter
 {
