@@ -1,5 +1,6 @@
 <?php
 
+use CaptainHook\App\Exception\ActionFailed;
 use fperezco\CaptainhookConventionalBranchCommits\BranchNameValidator;
 use PHPUnit\Framework\TestCase;
 
@@ -8,19 +9,86 @@ class BranchNameValidatorTest extends TestCase
     /**
      * @dataProvider validBranchNameProvider
      */
-    public function testValidBranchName($validBranchName)
+    public function testValidBranchNameExceptionIsNotThrown($validBranchName)
     {
-        $validator = new BranchNameValidator();
-        $this->assertTrue($validator->__invoke($validBranchName));
+        $validator = new BranchNameValidator($validBranchName);
+
+        try {
+            $validator->validate();
+        } catch (ActionFailed $e) {
+            $this->fail("Expected no exception, but got: " . $e->getMessage());
+        }
+        $this->addToAssertionCount(1);
     }
 
     /**
      * @dataProvider invalidBranchNameProvider
      */
-    public function testInvalidBranchName($invalidBranchName)
+    public function testInvalidBranchNameExceptionIsThrown($invalidBranchName)
     {
-        $validator = new BranchNameValidator();
-        $this->assertFalse($validator->__invoke($invalidBranchName));
+        $this->expectException(ActionFailed::class);
+        $validator = new BranchNameValidator($invalidBranchName);
+        $validator->validate();
+    }
+
+    public function testInvalidBranchNameMessageWithDefaultPattern()
+    {
+        $invalidBranchName = 'invalid-branch-name';
+        $validator = new BranchNameValidator($invalidBranchName);
+
+        try {
+            $validator->validate();
+            $this->fail("Expected exception not thrown");
+        } catch (ActionFailed $e) {
+            $this->assertSame(BranchNameValidator::MESSAGE_INVALID_BRANCH_NAME, $e->getMessage());
+        }
+    }
+
+    public function testInvalidBranchNameWithCustomPattern()
+    {
+        $invalidBranchName = 'invalid-branch-name';
+        $customPattern = '/^(custom|pattern)\/[A-Za-z0-9-]+$/';
+        $validator = new BranchNameValidator($invalidBranchName, $customPattern);
+
+        try {
+            $validator->validate();
+            $this->fail("Expected exception not thrown");
+        } catch (ActionFailed $e) {
+            $expectedMessage = "Error: branch: 'invalid-branch-name' must follow the pattern '$customPattern'.";
+            $this->assertSame($expectedMessage, $e->getMessage());
+        }
+    }
+
+    /**
+     * @dataProvider customBranchNameProvider
+     */
+    public function testCustomBranchNamePattern($branchName, $shouldThrowException)
+    {
+        $customPattern = '/^(custom|pattern)\/[A-Za-z0-9-]+$/';
+        $validator = new BranchNameValidator($branchName, $customPattern);
+
+        if ($shouldThrowException) {
+            $this->expectException(ActionFailed::class);
+        }
+
+        $validator->validate();
+
+        if (!$shouldThrowException) {
+            $this->assertTrue(true);
+        }
+    }
+
+
+    public function customBranchNameProvider(): array
+    {
+        return [
+            ['custom/branch-123', false], // Valid, no se espera excepción
+            ['pattern/branch-456', false], // Valid, no se espera excepción
+            ['invalid/branch', true],      // Invalid, debería lanzar una excepción
+            ['custom/', true],             // Invalid, debería lanzar una excepción
+            ['pattern/', true],            // Invalid, debería lanzar una excepción
+            ['custom-branch-123', true],   // Invalid, debería lanzar una excepción
+        ];
     }
 
     public function validBranchNameProvider(): array
@@ -32,10 +100,12 @@ class BranchNameValidatorTest extends TestCase
             ['feature/RTG-2345-new-user'],
             ['feature/RT-23'],
             ['feature/A-2'],
+            ['feature/new-issue-blalbal'],
             ['bugfix/IDB-89-fix-bug'],
             ['hotfix/IDB-89-fix-bug'],
             ['chore/IDB-89-fix-bug'],
             ['release/RD-56'],
+            ['bugfix/123']
         ];
     }
 
@@ -46,8 +116,7 @@ class BranchNameValidatorTest extends TestCase
             ['feature/RTG_2345_new_user'],
             ['RTG_2345_new_user'],
             ['ID-2345-new_user'],
-            ['feature/invalid'],
-            ['bugfix/123'],
+            ['bugfix/'],
             ['test/'],
             [''],
         ];

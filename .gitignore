@@ -3,3 +3,4 @@
 .docker
 composer.phar
 docker-compose.yml
+.phpunit.result.cache

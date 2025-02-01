@@ -5,7 +5,6 @@ namespace fperezco\CaptainhookConventionalBranchCommits;
 use CaptainHook\App\Config;
 use CaptainHook\App\Config\Action;
 use CaptainHook\App\Console\IO;
-use CaptainHook\App\Exception\ActionFailed;
 use CaptainHook\App\Hook\Action as HookAction;
 use Exception;
 use SebastianFeldmann\Git\Repository as Repo;
@@ -29,26 +28,26 @@ use SebastianFeldmann\Git\Repository as Repo;
 //ahi me quedo!!
 
 
-
 class CheckConventionalScriptExecutorGateway implements HookAction
 {
     private const GREEN = "\033[0;32m";
     private const NC = "\033[0m";
-    public const MESSAGE_INVALID_BRANCH_NAME = "Error: Branch name must be develop/master/release or follow the format 'type/AAA-BBB[-optional-text]'. For example: feature/RTG-2345-new-user or bugfix/IDB-89 or test/FEED-789-other-branch or develop/master/release.";
-    public const MESSAGE_INVALID_COMMIT_MESSAGE = "Error: Commit message must follow conventional commit format. For example: 'feat(ISSUE-856): add new feature'.";
 
     private CurrentBranchNameGetter $currentBranchNameGetter;
-    private BranchNameValidator $branchNameValidator;
-    private ?CommitNameValidator $commitForBranchValidator;
+    private ?ActionParametersGetter $actionParametersGetter;
+    private ?BranchNameValidator $branchNameValidator;
+    private ?CommitNameValidator $commitNameValidator;
 
     public function __construct(
         ?CurrentBranchNameGetter $currentBranchNameGetter = null,
+        ?ActionParametersGetter $actionParametersGetter = null,
         ?BranchNameValidator $branchNameValidator = null,
-        ?CommitNameValidator $commitForBranchValidator = null
+        ?CommitNameValidator $commitNameValidator = null
     ) {
         $this->currentBranchNameGetter = $currentBranchNameGetter ?? new CurrentBranchNameGetter();
-        $this->branchNameValidator = $branchNameValidator ?? new BranchNameValidator();
-        $this->commitForBranchValidator = $commitForBranchValidator ?? new CommitNameValidator();
+        $this->actionParametersGetter = $actionParametersGetter ?? new ActionParametersGetter();
+        $this->branchNameValidator = $branchNameValidator;
+        $this->commitNameValidator = $commitNameValidator;
     }
 
     /**
@@ -60,13 +59,17 @@ class CheckConventionalScriptExecutorGateway implements HookAction
         $commitMessage = $repository->getCommitMsg()->getRawContent();
         $branchName = $this->currentBranchNameGetter->__invoke();
 
-        if (!$this->branchNameValidator->__invoke($branchName)) {
-            throw new ActionFailed(self::MESSAGE_INVALID_BRANCH_NAME);
-        }
+        $branchNameValidator = $this->branchNameValidator ?? new BranchNameValidator(
+            $branchName,
+            $this->actionParametersGetter->__invoke($action, 'branchPattern')
+        );
+        $commitNameValidator = $this->commitNameValidator ?? new CommitNameValidator(
+            $commitMessage,
+            $this->actionParametersGetter->__invoke($action, 'commitPattern')
+        );
 
-        if(!$this->commitForBranchValidator->__invoke($commitMessage)) {
-            throw new ActionFailed(self::MESSAGE_INVALID_COMMIT_MESSAGE);
-        }
+        $branchNameValidator->validate();
+        $commitNameValidator->validate();
         $io->write(self::GREEN . 'Right commit format message ;)' . self::NC);
     }
 }
