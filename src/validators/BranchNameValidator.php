@@ -6,7 +6,7 @@ use CaptainHook\App\Exception\ActionFailed;
 
 class BranchNameValidator
 {
-    public const MESSAGE_INVALID_BRANCH_NAME = "Error: Branch name must be develop/master/release or follow the format 'type/AAA-BBB[-optional-text]'. For example: feature/RTG-2345-new-user or bugfix/IDB-89 or test/FEED-789-other-branch or develop/master/release.";
+    public const MESSAGE_INVALID_BRANCH_NAME = "Error: Branch name must follow conventional branching pattern: '/^(develop|master|main|(feature|bugfix|hotfix|chore|release)\/[A-Za-z0-9-]+)$/';";
     private string $currentBranchName;
     private ?string $branchPattern;
     private ?bool $branchShouldIncludeTicketCode;

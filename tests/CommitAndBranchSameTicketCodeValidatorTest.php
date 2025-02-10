@@ -90,6 +90,7 @@ class CommitAndBranchSameTicketCodeValidatorTest extends TestCase
     {
         return [
             ['feature/RTG-2345-new-user', 'feat(RTG-2345): add new feature'],
+            ['bugfix/ASK-12-blablabl', 'feat(hi): add new feature ASK-12\n'],
             ['bugfix/IDB-89-fix-bug', 'fix: balbalb IDB-89 bug'],
             ['hotfix/fix-bug-issue-IDB-4091-beasd', 'hotfix(): fix bug on issue #IDB-4091#'],
             ['hotfix/fix-bug-BLA-965-issue-IDB-4091-beasd', 'chore(): fix AD-18 bug on issue #IDB-4091#'],

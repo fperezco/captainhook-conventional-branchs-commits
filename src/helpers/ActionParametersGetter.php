@@ -14,11 +14,6 @@ class ActionParametersGetter
     public function getBoolParam(Action $action, string $parameter): ?bool
     {
         $value = $action->getOptions()->get($parameter);
-        if ($value === "1") {
-            return true;
-        } elseif ($value === "0") {
-            return false;
-        }
-        return null;
+        return !$value ? null : $value;
     }
 }

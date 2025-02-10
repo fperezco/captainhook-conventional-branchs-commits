@@ -1,6 +1,6 @@
 {
-    "name": "fperezco/captainhook-conventional-branch-commits",
-    "description": "Captain hook conventional branch commits is just a 'hook' to check that a commit, in a conventional branching model, follows the conventional rules.",
+    "name": "fperezco/captainhook-conventional-branchs-commits",
+    "description": "Captain hook conventional branchs and commits is just a 'hook' to check that a commit, in a conventional branching model, follows the conventional rules.",
     "type": "captain-hook",
     "require": {
         "captainhook/captainhook": "^5.18"
@@ -17,12 +17,10 @@
         }
     ],
     "minimum-stability": "stable",
-    "scripts": {
-        "captainhook-conventional-branch-commits:setup": [
-            "php vendor/fperezco/captainhook-conventional-branch-commits/script/setup.php"
-        ]
-    },
     "require-dev": {
         "phpunit/phpunit": "^9.6"
-    }
+    },
+    "bin": [
+        "bin/captainhook-conventional-branchs-commits"
+    ]
 }

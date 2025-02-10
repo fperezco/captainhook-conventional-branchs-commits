@@ -1,0 +1,16 @@
+#!/usr/bin/env php
+<?php
+
+require __DIR__ . '/../vendor/autoload.php';
+
+use fperezco\CaptainhookConventionalBranchCommits\setup\Setup;
+
+$command = $argv[1] ?? null;
+
+if ($command === 'configure') {
+    Setup::run();
+    exit(0);
+}
+
+echo "Usage: vendor/bin/captainhook-captainhook-conventional-branchs-commits configure\n";
+exit(1);
