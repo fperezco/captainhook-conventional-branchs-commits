@@ -4,11 +4,6 @@ namespace fperezco\CaptainhookConventionalBranchCommits\validators;
 
 use CaptainHook\App\Exception\ActionFailed;
 
-//todo, me queda
-
-//hacer el paquete de composer, hay que hacer uno para php 7,4 y otro para 8??
-
-
 class CommitAndBranchSameTicketCodeValidator
 {
     private string $branchName;
