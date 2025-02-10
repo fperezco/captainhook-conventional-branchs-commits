@@ -3,6 +3,7 @@
     "description": "Captain hook conventional branchs and commits is just a 'hook' to check that a commit, in a conventional branching model, follows the conventional rules.",
     "type": "captain-hook",
     "require": {
+        "php": ">=7.4",
         "captainhook/captainhook": "^5.18"
     },
     "license": "MIT",
