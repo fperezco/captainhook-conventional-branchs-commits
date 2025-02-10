@@ -2,6 +2,16 @@
 
 Captain hook conventional branch commits is just a 'hook' to check that a commit, in a conventional branching model, follows the conventional rules.
 
+## Usage
+
+The conventional branch and commit checker script will be executed on every commit.
+
+By default, the branch should follow the conventional branches rules: https://conventional-branch.github.io/
+
+And, by default, the commits the conventional commits rules: https://www.conventionalcommits.org/en/v1.0.0/
+
+If the branch or commit message does not follow the rules, the commit will be rejected.
+
 ## Installation
 
 Previously you have should installed captainhook in your project. See: https://github.com/captainhookphp/captainhook
@@ -72,18 +82,6 @@ If your project requires that the commit and branch should have the same ticket 
 "commitAndBranchCommonTicketCodePattern": "/[A-Z]+-[0-9]+/",
 "commitAndBranchCommonTicketCodePatternBranchExceptionsPattern": "/^(develop|master|main)$/"
 ```
-
-
-## Usage
-
-The conventional branch and commit checker script will be executed on every commit.
-
-By default, the branch should follow the conventional branches rules: https://conventional-branch.github.io/
-
-And, by default, the commits the conventional commits rules: https://www.conventionalcommits.org/en/v1.0.0/
-
-If the commit message does not follow the rules, the commit will be rejected.
-
 
 
 ## Contributing
